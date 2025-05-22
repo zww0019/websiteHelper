@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "网页助手",
+  "version": "1.0",
+  "description": "一个智能的网页助手，可以帮助你总结网页内容并回答问题",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["marked.min.js", "content.js"],
+      "css": ["github-markdown.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["github-markdown.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+} 

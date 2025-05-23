@@ -230,6 +230,17 @@ function createAssistantUI() {
     const isCollapsed = content.style.display === 'none';
     content.style.display = isCollapsed ? 'flex' : 'none';
     toggleBtn.textContent = isCollapsed ? '收起' : '展开';
+    
+    // 修改助手容器的样式
+    if (isCollapsed) {
+      assistant.style.width = '40vw';
+      assistant.style.height = '70vh';
+      assistant.style.background = 'white';
+    } else {
+      assistant.style.width = 'auto';
+      assistant.style.height = 'auto';
+      assistant.style.background = 'transparent';
+    }
   });
 
   return assistant;

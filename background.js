@@ -265,10 +265,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
   }
 });
-
-// 监听标签页更新事件
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url.startsWith('http')) {
-    // 可以在这里添加页面加载完成后的处理逻辑
-  }
-}); 

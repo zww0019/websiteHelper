@@ -1,3 +1,15 @@
+// 监听来自扩展图标的点击
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  if (request.action === 'toggleAssistant') {
+    const existingAssistant = document.getElementById('webpage-assistant');
+    if (existingAssistant) {
+      existingAssistant.remove();
+    } else {
+      initializeAssistant();
+    }
+  }
+});
+
 // 创建助手界面
 function createAssistantUI() {
   // 创建助手容器
@@ -165,7 +177,7 @@ function createAssistantUI() {
   // 配置 marked 选项
   marked.setOptions({
     breaks: true, // 支持 GitHub 风格的换行
-    gfm: true, // 启用 GitHub 风格的 Markdown
+    //gfm: true, // 启用 GitHub 风格的 Markdown
     headerIds: false, // 禁用标题 ID
     mangle: false, // 禁用标题 ID 混淆
     sanitize: false // 允许 HTML 标签
@@ -225,32 +237,43 @@ function createAssistantUI() {
 
 // 提取网页主要内容
 function extractMainContent() {
-  // 移除不需要的元素
-  const elementsToRemove = document.querySelectorAll('script, style, nav, footer, header, aside, .ad, .advertisement, .banner');
-  elementsToRemove.forEach(el => el.remove());
+  try {
+    // 创建 Readability 实例
+    const documentClone = document.cloneNode(true);
+    const reader = new Readability(documentClone);
+    
+    // 解析文章内容
+    const article = reader.parse();
+    
+    if (!article) {
+      console.log('Readability 解析失败，使用备用方案');
+      return {
+        title: document.title,
+        description: document.querySelector('meta[name="description"]')?.content || '',
+        mainContent: document.body.innerText,
+        url: window.location.href
+      };
+    }
 
-  // 获取所有文本内容
-  const bodyText = document.body.innerText;
-  
-  // 获取页面标题
-  const title = document.title;
-  
-  // 获取页面描述
-  const metaDescription = document.querySelector('meta[name="description"]')?.content || '';
-  
-  // 获取主要文章内容（如果存在）
-  const article = document.querySelector('article')?.innerText || '';
-  const mainContent = document.querySelector('main')?.innerText || '';
-  
-  // 组合所有内容
-  const content = {
-    title,
-    description: metaDescription,
-    mainContent: article || mainContent || bodyText,
-    url: window.location.href
-  };
-
-  return content;
+    // 返回提取的内容
+    return {
+      title: article.title,
+      description: article.excerpt || '',
+      mainContent: article.content,
+      url: window.location.href,
+      byline: article.byline,
+      siteName: article.siteName,
+      publishedTime: article.publishedTime
+    };
+  } catch (error) {
+    console.error('提取内容时出错：', error);
+    return {
+      title: document.title,
+      description: document.querySelector('meta[name="description"]')?.content || '',
+      mainContent: document.body.innerText,
+      url: window.location.href
+    };
+  }
 }
 
 // 初始化助手
@@ -330,17 +353,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
   } catch (error) {
     console.error('处理消息时出错：', error);
-  }
-});
-
-// 监听来自扩展图标的点击
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'toggleAssistant') {
-    const existingAssistant = document.getElementById('webpage-assistant');
-    if (existingAssistant) {
-      existingAssistant.remove();
-    } else {
-      initializeAssistant();
-    }
   }
 }); 

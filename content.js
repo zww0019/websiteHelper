@@ -188,9 +188,9 @@ function createAssistantUI() {
     regenerateButton.disabled = true;
     summaryBox.innerHTML = '正在重新生成摘要...';
     
-    // 发送消息给 background script 重新生成摘要
+    // 重新抓取内容并发送消息给 background script
     chrome.runtime.sendMessage(
-      { action: 'generateSummary', content: window.pageContent },
+      { action: 'generateSummary', content: extractMainContent() },
       response => {
         regenerateButton.disabled = false;
         if (response.error) {
@@ -207,9 +207,9 @@ function createAssistantUI() {
     askButton.disabled = true;
     answerBox.innerHTML = '正在思考...';
 
-    // 发送消息给 background script
+    // 重新抓取内容并发送消息给 background script
     chrome.runtime.sendMessage(
-      { action: 'askQuestion', question: question, content: window.pageContent },
+      { action: 'askQuestion', question: question, content: extractMainContent() },
       response => {
         askButton.disabled = false;
         if (response.error) {
@@ -249,32 +249,28 @@ function createAssistantUI() {
 // 提取网页主要内容
 function extractMainContent() {
   try {
-    // 创建 Readability 实例
+    // 创建文档副本以避免修改原始DOM
     const documentClone = document.cloneNode(true);
-    const reader = new Readability(documentClone);
     
-    // 解析文章内容
-    const article = reader.parse();
-    
-    if (!article) {
-      console.log('Readability 解析失败，使用备用方案');
-      return {
-        title: document.title,
-        description: document.querySelector('meta[name="description"]')?.content || '',
-        mainContent: document.body.innerText,
-        url: window.location.href
-      };
-    }
+    // 移除不需要的元素
+    const elementsToRemove = documentClone.querySelectorAll(
+      'script, style, nav, footer, header, iframe, .ad, .advertisement, .banner'
+    );
+    elementsToRemove.forEach(el => el.remove());
 
-    // 返回提取的内容
+    // 提取标题和主要内容
+    const title = documentClone.querySelector('h1')?.textContent || document.title;
+    // 获取head中的description
+    const description = documentClone.querySelector('meta[name="description"]')?.content || '';
+    const mainContent = documentClone.body.textContent
+      .replace(/\s+/g, ' ')
+      .trim();
+
     return {
-      title: article.title,
-      description: article.excerpt || '',
-      mainContent: article.content,
-      url: window.location.href,
-      byline: article.byline,
-      siteName: article.siteName,
-      publishedTime: article.publishedTime
+      title,
+      description,
+      mainContent,
+      url: window.location.href
     };
   } catch (error) {
     console.error('提取内容时出错：', error);
@@ -290,26 +286,22 @@ function extractMainContent() {
 // 初始化助手
 async function initializeAssistant() {
   const assistant = createAssistantUI();
-  const content = extractMainContent();
   
   // 通过消息获取摘要
   chrome.runtime.sendMessage(
-    { action: 'generateSummary', content },
+    { action: 'generateSummary', content: extractMainContent() },
     response => {
       if (response.error) {
         assistant.querySelector('#summary').textContent = '生成摘要时出错，请稍后重试。';
       }
     }
   );
-  
-  // 存储页面内容供后续问答使用
-  window.pageContent = content;
 
   // 监听来自 assistant 的消息
   window.addEventListener('message', async (event) => {
     if (event.data.type === 'askQuestion') {
       chrome.runtime.sendMessage(
-        { action: 'askQuestion', question: event.data.question, content: window.pageContent },
+        { action: 'askQuestion', question: event.data.question, content: extractMainContent() },
         response => {
           if (response.error) {
             assistant.querySelector('#answer').textContent = '回答问题时出错，请稍后重试。';

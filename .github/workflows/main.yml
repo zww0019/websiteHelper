@@ -28,17 +28,19 @@ jobs:
       uses: saranraj3195/sparkout-deployment@v2
       with:
        # SSH private key for authentication
-       DEPLOY_KEY: 
+       DEPLOY_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
        # SSH username
        USERNAME: root
        # IP address of the server
-       SERVER_IP: 
+       SERVER_IP: 142.171.85.9
        # SSH port of the server
-       SERVER_PORT: 
+       SERVER_PORT: 22
        # Destination directory on the server
-       SERVER_DESTINATION: 
+       SERVER_DESTINATION: /root/deploy
        # Additional rsync arguments
-       ARGS: # optional
+       ARGS: "-rlgoDzvc -i --delete"
+       SOURCE: "dist/"
+       #ARGS: # optional
        # Folder to deploy
-       FOLDER: # optional
+       #FOLDER: # optional
           

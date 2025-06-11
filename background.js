@@ -1,6 +1,6 @@
 // Dify API 配置
 const DIFY_API_KEY = 'app-URkurWqgBwoI7xjA9lEnUxN8';
-const DIFY_API_URL = 'http://dify.zwwpc.top/v1/chat-messages';
+const DIFY_API_URL = 'https://dify.zwwpc.top/v1/chat-messages';
 
 // 监听扩展安装事件
 chrome.runtime.onInstalled.addListener(() => {
